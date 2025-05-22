@@ -1,0 +1,227 @@
+<!-- README.md -->
+# AI English Practice Voice Chat
+
+This project is a web-based voice chat application designed for users to practice English conversations with an AI assistant (powered by OpenAI's GPT-3.5-turbo). It utilizes the Web Speech API for voice input and speech synthesis, allowing for a natural, hands-free interaction.
+
+## Features
+
+-   **Voice-to-Text:** Captures user's speech and transcribes it to text using the Web Speech API.
+-   **AI Conversation Partner:** Sends transcribed text to OpenAI's Chat Completions API (gpt-3.5-turbo) for intelligent responses.
+-   **Text-to-Speech:** Speaks the AI assistant's replies aloud using the SpeechSynthesis API.
+-   **Chat History:** Maintains a record of the conversation.
+-   **Responsive Design:** Optimized for both desktop and mobile devices.
+-   **Continuous Conversation:** Allows for back-and-forth interaction.
+-   **Minimalist UI:** Clean and user-friendly interface.
+
+## Tech Stack
+
+-   **Frontend:** HTML, CSS, JavaScript
+-   **APIs:**
+    -   Web Speech API (SpeechRecognition for input, SpeechSynthesis for output)
+    -   OpenAI Chat Completions API (gpt-3.5-turbo)
+
+## Prerequisites
+
+-   A modern web browser that supports the Web Speech API (e.g., Google Chrome, Microsoft Edge).
+-   An OpenAI API key.
+
+## Setup and Local Development
+
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/your-username/ai-english-practice.git
+    cd ai-english-practice
+    ```
+
+2.  **OpenAI API Key Setup:**
+    *   **Obtain an API Key:**
+        1.  Go to [OpenAI's API platform](https://platform.openai.com/).
+        2.  Sign up or log in to your account.
+        3.  Navigate to the API keys section (usually under your account settings).
+        4.  Create a new secret key. Copy this key immediately and store it securely.
+    *   **Configure the API Key (for local testing - NOT FOR PRODUCTION):**
+        Open `script.js` and find the following line:
+        ```javascript
+        const OPENAI_API_KEY = 'YOUR_OPENAI_API_KEY_HERE';
+        ```
+        Replace `'YOUR_OPENAI_API_KEY_HERE'` with your actual OpenAI API key.
+
+        **⚠️ CRITICAL SECURITY WARNING ⚠️**
+        **Do NOT commit your API key directly into `script.js` if you plan to push this code to a public repository or deploy it publicly with this client-side key.** Exposing your API key in client-side code can lead to misuse and unauthorized charges to your OpenAI account. For production or shared environments, **YOU MUST USE A PROXY SERVER** (see "Security Best Practices" below).
+
+3.  **Running the Application:**
+    The simplest way to run this locally is by using a live server extension in your code editor (like VS Code's "Live Server").
+    -   Open the `index.html` file with the Live Server.
+    -   Alternatively, you can open `index.html` directly in your browser, but some Web Speech API features might work more reliably when served over HTTP/HTTPS (which Live Server provides).
+
+## Using the Application
+
+1.  Open `index.html` in your browser.
+2.  Click the "Start Talking" button.
+3.  Your browser may ask for microphone permission. Grant access.
+4.  Speak clearly into your microphone.
+5.  Your transcribed message will appear in the chat box.
+6.  The AI assistant's response will appear and be spoken aloud.
+7.  Click "Start Talking" again to continue the conversation.
+
+## Security Best Practices
+
+### ‼️ Never Expose Your OpenAI API Key in Client-Side Code ‼️
+
+The `script.js` file in this repository directly includes a placeholder for the OpenAI API key. This is done for simplicity in this example but is **EXTREMELY INSECURE** for any real-world deployment or public repository.
+
+**Why is it insecure?**
+Anyone who can view your website's source code (which is everyone) can find your API key. This allows them to use your key, potentially incurring charges on your OpenAI account and exhausting your quota.
+
+### Recommended Solution: Use a Proxy Server
+
+A proxy server acts as an intermediary between your front-end application and the OpenAI API. Your front-end makes requests to your proxy server, and the proxy server (running in a secure backend environment) adds the API key and forwards the request to OpenAI.
+
+#### Sample Node.js Proxy Server Implementation
+
+Here's a basic example of a Node.js proxy server using Express:
+
+1.  **Create a new directory for your proxy server (e.g., `proxy-server` outside your front-end code).**
+2.  **Initialize npm and install dependencies:**
+    ```bash
+    cd proxy-server
+    npm init -y
+    npm install express node-fetch dotenv cors
+    ```
+    *(Note: If using Node.js 18+, `node-fetch` might not be needed as `fetch` is globally available).*
+3.  **Create a `.env` file in the `proxy-server` directory:**
+    ```
+    OPENAI_API_KEY=your_actual_openai_api_key_here
+    ```
+    Replace `your_actual_openai_api_key_here` with your real key. **Add `.env` to your `.gitignore` file** to prevent committing it.
+4.  **Create `server.js` (or `proxy.js`) in the `proxy-server` directory:**
+    ```javascript
+    // proxy-server/server.js
+    const express = require('express');
+    const fetch = require('node-fetch'); // Or use global fetch in Node 18+
+    const cors = require('cors');
+    require('dotenv').config();
+
+    const app = express();
+    const PORT = process.env.PORT || 3000;
+
+    const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+
+    if (!OPENAI_API_KEY) {
+        console.error("FATAL ERROR: OPENAI_API_KEY is not set in .env file.");
+        process.exit(1);
+    }
+
+    app.use(cors()); // Configure CORS appropriately for your frontend URL in production
+    app.use(express.json());
+
+    app.post('/api/chat', async (req, res) => {
+        const { chatHistory } = req.body;
+
+        if (!chatHistory) {
+            return res.status(400).json({ error: 'chatHistory is required' });
+        }
+
+        try {
+            const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${OPENAI_API_KEY}`
+                },
+                body: JSON.stringify({
+                    model: 'gpt-3.5-turbo',
+                    messages: chatHistory,
+                    max_tokens: 100 // Consistent with client-side
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error('OpenAI API Error through Proxy:', errorData);
+                return res.status(response.status).json(errorData);
+            }
+
+            const data = await response.json();
+            res.json(data);
+        } catch (error) {
+            console.error('Proxy Server Error:', error);
+            res.status(500).json({ error: 'Failed to fetch from OpenAI API via proxy' });
+        }
+    });
+
+    app.listen(PORT, () => {
+        console.log(`Proxy server running on http://localhost:${PORT}`);
+    });
+    ```
+
+5.  **Run the proxy server:**
+    ```bash
+    node server.js
+    ```
+
+6.  **Modify `script.js` to use the proxy:**
+    *   Remove or comment out the `OPENAI_API_KEY` constant.
+    *   Change the `OPENAI_API_URL` to point to your proxy:
+        ```javascript
+        // const OPENAI_API_KEY = 'YOUR_OPENAI_API_KEY_HERE'; // No longer needed here
+        const OPENAI_API_URL = 'http://localhost:3000/api/chat'; // Your proxy URL
+        ```
+    *   Remove the `Authorization` header from the `fetch` call in `getAIResponse()` because the proxy handles authentication:
+        ```javascript
+        // Inside getAIResponse()
+        // ...
+        const response = await fetch(OPENAI_API_URL, { // Use proxy URL
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                // 'Authorization': `Bearer ${OPENAI_API_KEY}` // REMOVE THIS LINE
+            },
+            body: JSON.stringify({
+                // model: 'gpt-3.5-turbo', // Model can be set on proxy too
+                chatHistory: chatHistory, // Send chatHistory under this key
+                // max_tokens: 100 // This can also be set on proxy
+            })
+        });
+        // ...
+        ```
+        Ensure the body sent to the proxy matches what the proxy expects (e.g., `{ chatHistory: chatHistory }`).
+
+## Deployment
+
+### Frontend (HTML, CSS, JS)
+
+The static frontend files (`index.html`, `style.css`, `script.js`) can be easily deployed using services like:
+
+-   **GitHub Pages:**
+    1.  Push your code to a GitHub repository.
+    2.  Go to your repository's "Settings" tab.
+    3.  Under "Pages" (in the "Code and automation" section), select the branch to deploy from (e.g., `main` or `gh-pages`) and the `/ (root)` folder.
+    4.  Save. Your site will be available at `https://your-username.github.io/your-repository-name/`.
+
+-   **Netlify, Vercel, Cloudflare Pages:** These platforms offer simple drag-and-drop or Git-connected deployments for static sites.
+
+**Note:** If you deploy the frontend and are still using the client-side API key in `script.js` (NOT RECOMMENDED), your key will be publicly exposed.
+
+### Backend (Proxy Server)
+
+If you implement the Node.js proxy server, you'll need to host it on a platform that supports Node.js applications, such as:
+
+-   **Heroku** (has free/hobby tiers)
+-   **Vercel** (supports serverless functions which can act as a proxy)
+-   **Render** (has free tiers for web services)
+-   **Fly.io**
+-   **AWS EC2, Google Cloud Run, Azure App Service**, etc. (more advanced options)
+
+When deploying the proxy server:
+-   Ensure your `OPENAI_API_KEY` is set as an environment variable on the hosting platform, not hardcoded.
+-   Configure CORS on your proxy server to only allow requests from your deployed frontend's domain for better security (e.g., `app.use(cors({ origin: 'https://your-username.github.io' }));`).
+-   Update the `OPENAI_API_URL` in your deployed `script.js` to point to your deployed proxy server's URL.
+
+## Contributing
+
+Contributions are welcome! Please feel free to fork the repository, make improvements, and submit a pull request.
+
+## License
+
+This project is open-source and available under the [MIT License](LICENSE.txt) (You would need to add a LICENSE.txt file for this).

@@ -1,0 +1,134 @@
+/* style.css */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f7f6;
+    color: #333;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* Align to top for longer content */
+    min-height: 100vh;
+    line-height: 1.6;
+}
+
+.app-container {
+    width: 100%;
+    max-width: 700px;
+    margin: 20px;
+    padding: 20px;
+    background-color: #fff;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+}
+
+h1 {
+    text-align: center;
+    color: #2c3e50;
+    margin-bottom: 20px;
+    font-size: 1.8em;
+}
+
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    height: auto; /* Adjust height based on content */
+}
+
+.chat-box {
+    flex-grow: 1;
+    height: 400px; /* Fixed height for scroll */
+    overflow-y: auto;
+    padding: 15px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    background-color: #f9f9f9;
+}
+
+.message {
+    padding: 10px 15px;
+    border-radius: 18px;
+    margin-bottom: 10px;
+    max-width: 80%;
+    word-wrap: break-word;
+}
+
+.user-message {
+    background-color: #007bff;
+    color: white;
+    align-self: flex-end;
+    margin-left: auto; /* Pushes to the right */
+    text-align: right;
+}
+
+.assistant-message {
+    background-color: #e9ecef;
+    color: #333;
+    align-self: flex-start;
+    margin-right: auto; /* Pushes to the left */
+    text-align: left;
+}
+
+.system-message {
+    font-style: italic;
+    color: #6c757d;
+    text-align: center;
+    font-size: 0.9em;
+    padding: 8px;
+    margin-bottom: 10px;
+    background-color: #f0f0f0;
+    border-radius: 4px;
+}
+
+
+.talk-button {
+    padding: 12px 20px;
+    font-size: 1em;
+    color: white;
+    background-color: #28a745;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    align-self: center; /* Center button within its container */
+}
+
+.talk-button:hover {
+    background-color: #218838;
+}
+
+.talk-button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+.status-message {
+    text-align: center;
+    margin-top: 10px;
+    font-size: 0.9em;
+    color: #555;
+    min-height: 1.2em; /* Reserve space to prevent layout shift */
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+    .app-container {
+        margin: 10px;
+        padding: 15px;
+    }
+
+    h1 {
+        font-size: 1.5em;
+    }
+
+    .chat-box {
+        height: 300px; /* Adjust height for smaller screens */
+    }
+
+    .talk-button {
+        width: 100%; /* Make button full width on small screens */
+    }
+}
